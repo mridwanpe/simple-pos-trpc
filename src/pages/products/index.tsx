@@ -13,6 +13,7 @@ import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -30,6 +31,7 @@ const ProductsPage: NextPageWithLayout = () => {
   const [uploadedProductImageUrl, setUploadedProductImageUrl] = useState<
     string | null
   >(null);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   const [createProductDialogOpen, setCreateProductDialogOpen] = useState(false);
 
@@ -40,6 +42,14 @@ const ProductsPage: NextPageWithLayout = () => {
       await apiUtils.product.getProducts.invalidate();
       alert("Created product successfully");
       setCreateProductDialogOpen(false);
+    },
+  });
+
+  const { mutate: deleteProductById } = api.product.deleteProduct.useMutation({
+    onSuccess: async () => {
+      await apiUtils.product.getProducts.invalidate();
+      alert("Product deleted successfully");
+      setProductToDelete(null);
     },
   });
 
@@ -57,6 +67,18 @@ const ProductsPage: NextPageWithLayout = () => {
       price: values.price,
       categoryId: values.categoryId,
       imageUrl: uploadedProductImageUrl,
+    });
+  };
+
+  const handleClickDeleteProduct = (productId: string) => {
+    setProductToDelete(productId);
+  };
+
+  const handleConfirmDeleteProduct = () => {
+    if (!productToDelete) return;
+
+    deleteProductById({
+      productId: productToDelete,
     });
   };
 
@@ -104,6 +126,34 @@ const ProductsPage: NextPageWithLayout = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <AlertDialog
+            open={!!productToDelete}
+            onOpenChange={(open) => {
+              if (!open) {
+                setProductToDelete(null);
+              }
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Category</AlertDialogTitle>
+              </AlertDialogHeader>
+              <AlertDialogDescription>
+                Are you sure you want to delete this category? This action
+                cannot be undone.
+              </AlertDialogDescription>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <Button
+                  variant="destructive"
+                  onClick={handleConfirmDeleteProduct}
+                >
+                  Delete
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </DashboardHeader>
 
@@ -116,6 +166,8 @@ const ProductsPage: NextPageWithLayout = () => {
             price={product.price}
             category={product.category.name}
             image={product.imageUrl ?? ""}
+            // onEdit={() => {}}
+            onDelete={() => handleClickDeleteProduct(product.id)}
           />
         ))}
       </div>
