@@ -31,9 +31,14 @@ const ProductsPage: NextPageWithLayout = () => {
   const [uploadedProductImageUrl, setUploadedProductImageUrl] = useState<
     string | null
   >(null);
+  const [editedProductImageUrl, setEditedProductImageUrl] = useState<
+    string | null
+  >(null);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   const [createProductDialogOpen, setCreateProductDialogOpen] = useState(false);
+  const [editProductDialogOpen, setEditProductDialogOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState<string | null>(null);
 
   const { data: products } = api.product.getProducts.useQuery();
 
@@ -53,13 +58,27 @@ const ProductsPage: NextPageWithLayout = () => {
     },
   });
 
+  const { mutate: editProduct } = api.product.editProduct.useMutation({
+    onSuccess: async () => {
+      await apiUtils.product.getProducts.invalidate();
+      alert("Successfully edited category");
+      editproductForm.reset();
+      setProductToEdit(null);
+      setEditProductDialogOpen(false);
+    },
+  });
+
   const createProductForm = useForm<ProductFormSchema>({
+    resolver: zodResolver(productFormSchema),
+  });
+
+  const editproductForm = useForm<ProductFormSchema>({
     resolver: zodResolver(productFormSchema),
   });
 
   const handleSubmitCreateProduct = (values: ProductFormSchema) => {
     if (!uploadedProductImageUrl) {
-      alert("Please upload an image!");
+      alert("Please upload an image first!");
       return;
     }
     createProduct({
@@ -79,6 +98,38 @@ const ProductsPage: NextPageWithLayout = () => {
 
     deleteProductById({
       productId: productToDelete,
+    });
+  };
+
+  const handleSubmitEditProduct = (data: ProductFormSchema) => {
+    if (!productToEdit){
+      alert("Please upload an image first!");
+      return;
+    };
+
+    editProduct({
+      productId: productToEdit,
+      name: data.name,
+      price: data.price,
+      categoryId: data.categoryId,
+      imageUrl: editedProductImageUrl || "",
+    });
+  };
+
+  const handleClickEditProduct = (product: {
+    id: string;
+    name: string;
+    price: number;
+    categoryId: string;
+    imageUrl: string;
+  }) => {
+    setProductToEdit(product.id);
+    setEditProductDialogOpen(true);
+    editproductForm.reset({
+      name: product.name,
+      price: product.price,
+      categoryId: product.categoryId,
+      imageUrl: product.imageUrl,
     });
   };
 
@@ -154,6 +205,37 @@ const ProductsPage: NextPageWithLayout = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <AlertDialog
+            open={editProductDialogOpen}
+            onOpenChange={setEditProductDialogOpen}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Edit Product</AlertDialogTitle>
+              </AlertDialogHeader>
+
+              <Form {...editproductForm}>
+                <ProductForm
+                  onSubmit={handleSubmitEditProduct}
+                  onChangeImageUrl={(imageUrl) =>
+                    setEditedProductImageUrl(imageUrl)
+                  }
+                />
+              </Form>
+
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <Button
+                  onClick={editproductForm.handleSubmit(
+                    handleSubmitEditProduct,
+                  )}
+                >
+                  Edit Product
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </DashboardHeader>
 
@@ -166,7 +248,15 @@ const ProductsPage: NextPageWithLayout = () => {
             price={product.price}
             category={product.category.name}
             image={product.imageUrl ?? ""}
-            // onEdit={() => {}}
+            onEdit={() =>
+              handleClickEditProduct({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                categoryId: product.category.id,
+                imageUrl: product.imageUrl ?? "",
+              })
+            }
             onDelete={() => handleClickDeleteProduct(product.id)}
           />
         ))}

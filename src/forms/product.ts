@@ -11,6 +11,7 @@ export const productFormSchema = z.object({
     }),
   price: z.coerce.number().min(1000),
   categoryId: z.string().min(1),
+  imageUrl: z.string().optional(),
 });
 
 export type ProductFormSchema = z.infer<typeof productFormSchema>;

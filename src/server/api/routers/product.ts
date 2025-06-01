@@ -85,34 +85,34 @@ export const productRouter = createTRPCRouter({
         },
       });
     }),
+
+  editProduct: protectedProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        name: z.string().min(3, "product name must be at least 3 characters"),
+        price: z.number().min(1000),
+        categoryId: z.string(),
+        imageUrl: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      await db.product.update({
+        where: {
+          id: input.productId,
+        },
+        data: {
+          name: input.name,
+          price: input.price,
+          imageUrl: input.imageUrl,
+          category: {
+            connect: {
+              id: input.categoryId,
+            },
+          },
+        },
+      });
+    }),
 });
-
-// editProduct: protectedProcedure
-//   .input(
-//     z.object({
-//       productId: z.string(),
-//       name: z.string().min(3, "Product name must be at least 3 characters"),
-//       price: z.number(),
-//       imageUrl: z.string(),
-//       categoryId: z.string(),
-//     }),
-//   )
-//   .mutation(async ({ ctx, input }) => {
-//     const { db } = ctx;
-
-//     await db.product.update({
-//       where: {
-//         id: input.productId,
-//       },
-//       data: {
-//         name: input.name,
-//         price: input.price,
-//         imageUrl: input.imageUrl,
-//         category: {
-//           connect: {
-//             id: input.categoryId,
-//           },
-//         },
-//       },
-//     });
-//   }),
