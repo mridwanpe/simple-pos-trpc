@@ -10,6 +10,7 @@ export const productRouter = createTRPCRouter({
   .input(
     z.object({
       categoryId: z.string(),
+      search: z.string().optional(),
     })
   )
   .query(async ({ ctx, input }) => {
@@ -20,6 +21,15 @@ export const productRouter = createTRPCRouter({
     if(input.categoryId !== "all") {
       whereClause.categoryId = input.categoryId;
     }
+
+    if (input.search) {
+        whereClause.OR = [
+          { name: { contains: input.search, mode: "insensitive" } },
+          {
+            category: { name: { contains: input.search, mode: "insensitive" } },
+          },
+        ];
+      }
 
     const products = await db.product.findMany({
       where: whereClause,

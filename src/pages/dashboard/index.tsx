@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/utils/api";
 import useCartStore from "@/store/cart";
 import { toast } from "sonner";
+import { useDebounce } from "@/hooks/use-debounce";
 
 const DashboardPage: NextPageWithLayout = () => {
   const cartStore = useCartStore();
@@ -24,15 +25,18 @@ const DashboardPage: NextPageWithLayout = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [orderSheetOpen, setOrderSheetOpen] = useState(false);
 
+  const debouncedSearchQuery = useDebounce<string>(searchQuery, 300);
+
   const { data: products } = api.product.getProducts.useQuery({
     categoryId: selectedCategory,
+    search: debouncedSearchQuery,
   });
 
-  const { data: categories } = api.category.getCategories.useQuery();
+  const { data: categories, isLoading } = api.category.getCategories.useQuery();
 
   const totalProducts = categories?.reduce((a, b) => {
     return a + b._count.products;
-  }, 0)
+  }, 0);
 
   const handleCategoryClick = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -59,7 +63,7 @@ const DashboardPage: NextPageWithLayout = () => {
       <DashboardHeader>
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <DashboardTitle>Dashboard {cartStore.items.length}</DashboardTitle>
+            <DashboardTitle>Dashboard</DashboardTitle>
             <DashboardDescription>
               Welcome to your Simple POS system dashboard.
             </DashboardDescription>
@@ -87,21 +91,25 @@ const DashboardPage: NextPageWithLayout = () => {
         </div>
 
         <div className="flex space-x-4 overflow-x-auto pb-2">
-          <CategoryFilterCard
-            name="All"
-            productCount={totalProducts || 0}
-            isSelected={selectedCategory === "all"}
-            onClick={() => handleCategoryClick("all")}
-          />
-          {categories?.map((category) => (
-            <CategoryFilterCard
-              key={category.id}
-              name={category.name}
-              productCount={category._count.products}
-              isSelected={selectedCategory === category.id}
-              onClick={() => handleCategoryClick(category.id)}
-            />
-          ))}
+          {!searchQuery && (
+            <>
+              <CategoryFilterCard
+                name="All"
+                productCount={totalProducts || 0}
+                isSelected={selectedCategory === "all"}
+                onClick={() => handleCategoryClick("all")}
+              />
+              {categories?.map((category) => (
+                <CategoryFilterCard
+                  key={category.id}
+                  name={category.name}
+                  productCount={category._count.products}
+                  isSelected={selectedCategory === category.id}
+                  onClick={() => handleCategoryClick(category.id)}
+                />
+              ))}
+            </>
+          )}
         </div>
 
         <div>
