@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OrderStatus } from "@prisma/client";
+import { toRupiah } from "@/utils/toRupiah";
 
 const SalesPage: NextPageWithLayout = () => {
   const apiUtils = api.useUtils();
@@ -26,6 +27,8 @@ const SalesPage: NextPageWithLayout = () => {
   const { data: orders } = api.order.getOrders.useQuery({
     status: filterOrder,
   });
+
+  const { data: salesReport } = api.order.getSalesReport.useQuery();
 
   const {
     mutate: finishOrder,
@@ -62,17 +65,17 @@ const SalesPage: NextPageWithLayout = () => {
       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-lg border p-4 shadow-sm">
           <h3 className="text-lg font-medium">Total Revenue</h3>
-          <p className="mt-2 text-3xl font-bold">$0.00</p>
+          <p className="mt-2 text-3xl font-bold">{toRupiah(salesReport?.totalRevenue || 0)}</p>
         </div>
 
         <div className="rounded-lg border p-4 shadow-sm">
           <h3 className="text-lg font-medium">Ongoing Orders</h3>
-          <p className="mt-2 text-3xl font-bold">0</p>
+          <p className="mt-2 text-3xl font-bold">{salesReport?.totalOngoingOrders || 0}</p>
         </div>
 
         <div className="rounded-lg border p-4 shadow-sm">
           <h3 className="text-lg font-medium">Completed Orders</h3>
-          <p className="mt-2 text-3xl font-bold">0</p>
+          <p className="mt-2 text-3xl font-bold">{salesReport?.totalCompletedOrders || 0}</p>
         </div>
       </div>
 

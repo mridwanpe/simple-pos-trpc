@@ -242,4 +242,59 @@ export const OrderRouter = createTRPCRouter({
         },
       });
     }),
+
+  getSalesReport: protectedProcedure.query(async ({ ctx }) => {
+    const { db } = ctx;
+
+    const paidOrdersQuery = db.order.findMany({
+      where: {
+        paidAt: {
+          not: null,
+        },
+      },
+      select: {
+        grandTotal: true,
+      },
+    });
+
+    const ongoingOrdersQuery = db.order.findMany({
+      where: {
+        status: {
+          not: "DONE",
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const completedOrdersQuery = db.order.findMany({
+      where: {
+        status: "DONE",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const [paidOrders, ongoingOrders, completedOrders] = await Promise.all([
+      paidOrdersQuery,
+      ongoingOrdersQuery,
+      completedOrdersQuery,
+    ]);
+
+    const totalRevenue = paidOrders.reduce((a, b) => {
+      return a + b.grandTotal;
+    }, 0);
+
+    const totalOngoingOrders = ongoingOrders.length;
+
+    const totalCompletedOrders = completedOrders.length;
+
+    return {
+      totalRevenue,
+      totalOngoingOrders,
+      totalCompletedOrders,
+    };
+  }),
 });
