@@ -162,7 +162,7 @@ const CategoriesPage: NextPageWithLayout = () => {
             <CategoryCatalogCard
               key={category.id}
               name={category.name}
-              productCount={category.productCount}
+              productCount={category._count.products}
               onEdit={() =>
                 handleClickEditCategory({
                   id: category.id,
