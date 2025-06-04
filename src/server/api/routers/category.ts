@@ -1,4 +1,3 @@
-import { create } from "domain";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { z } from "zod";
 
@@ -11,6 +10,11 @@ export const categoryRouter = createTRPCRouter({
         id: true,
         name: true,
         productCount: true,
+        _count: {
+          select: {
+            products: true,
+          },
+        }
       },
     });
 

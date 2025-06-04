@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { OrderStatus } from "@prisma/client";
 import { toRupiah } from "@/utils/toRupiah";
+import { toast } from "sonner";
 
 const SalesPage: NextPageWithLayout = () => {
   const apiUtils = api.useUtils();
@@ -39,7 +40,7 @@ const SalesPage: NextPageWithLayout = () => {
       await apiUtils.order.getOrders.invalidate({
         status: filterOrder,
       });
-      alert("Order finished");
+      toast.success("Finished Order");
     },
   });
 

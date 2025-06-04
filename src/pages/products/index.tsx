@@ -24,6 +24,7 @@ import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { productFormSchema, type ProductFormSchema } from "@/forms/product";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 
 const ProductsPage: NextPageWithLayout = () => {
   const apiUtils = api.useUtils();
@@ -40,12 +41,14 @@ const ProductsPage: NextPageWithLayout = () => {
   const [editProductDialogOpen, setEditProductDialogOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<string | null>(null);
 
-  const { data: products } = api.product.getProducts.useQuery();
+  const { data: products } = api.product.getProducts.useQuery({
+    categoryId: "all",
+  });
 
   const { mutate: createProduct } = api.product.createProduct.useMutation({
     onSuccess: async () => {
       await apiUtils.product.getProducts.invalidate();
-      alert("Created product successfully");
+      toast.success("Successfully Created Product");
       setCreateProductDialogOpen(false);
     },
   });
@@ -53,7 +56,7 @@ const ProductsPage: NextPageWithLayout = () => {
   const { mutate: deleteProductById } = api.product.deleteProduct.useMutation({
     onSuccess: async () => {
       await apiUtils.product.getProducts.invalidate();
-      alert("Product deleted successfully");
+      toast.success("Successfully Deleted Product");
       setProductToDelete(null);
     },
   });
@@ -61,7 +64,7 @@ const ProductsPage: NextPageWithLayout = () => {
   const { mutate: editProduct } = api.product.editProduct.useMutation({
     onSuccess: async () => {
       await apiUtils.product.getProducts.invalidate();
-      alert("Successfully edited category");
+      toast.success("Successfully Edited Category");
       editproductForm.reset();
       setProductToEdit(null);
       setEditProductDialogOpen(false);
@@ -78,7 +81,7 @@ const ProductsPage: NextPageWithLayout = () => {
 
   const handleSubmitCreateProduct = (values: ProductFormSchema) => {
     if (!uploadedProductImageUrl) {
-      alert("Please upload an image first!");
+      toast.error("Please upload an image first!");
       return;
     }
     createProduct({
@@ -103,7 +106,7 @@ const ProductsPage: NextPageWithLayout = () => {
 
   const handleSubmitEditProduct = (data: ProductFormSchema) => {
     if (!productToEdit){
-      alert("Please upload an image first!");
+      toast.error("Please upload an image first!");
       return;
     };
 

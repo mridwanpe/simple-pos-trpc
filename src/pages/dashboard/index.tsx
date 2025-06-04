@@ -8,14 +8,14 @@ import { CategoryFilterCard } from "@/components/shared/category/CategoryFilterC
 import { CreateOrderSheet } from "@/components/shared/CreateOrderSheet";
 import { ProductMenuCard } from "@/components/shared/product/ProductMenuCard";
 import { Input } from "@/components/ui/input";
-import { CATEGORIES, PRODUCTS } from "@/data/mock";
 import { Search, ShoppingCart } from "lucide-react";
 import type { ReactElement } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { NextPageWithLayout } from "../_app";
 import { Button } from "@/components/ui/button";
 import { api } from "@/utils/api";
 import useCartStore from "@/store/cart";
+import { toast } from "sonner";
 
 const DashboardPage: NextPageWithLayout = () => {
   const cartStore = useCartStore();
@@ -24,7 +24,15 @@ const DashboardPage: NextPageWithLayout = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [orderSheetOpen, setOrderSheetOpen] = useState(false);
 
-  const { data: products } = api.product.getProducts.useQuery();
+  const { data: products } = api.product.getProducts.useQuery({
+    categoryId: selectedCategory,
+  });
+
+  const { data: categories } = api.category.getCategories.useQuery();
+
+  const totalProducts = categories?.reduce((a, b) => {
+    return a + b._count.products;
+  }, 0)
 
   const handleCategoryClick = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -34,7 +42,7 @@ const DashboardPage: NextPageWithLayout = () => {
     const productToAdd = products?.find((product) => product.id === productId);
 
     if (!productToAdd) {
-      alert("Product not found!");
+      toast.error("Product Not Found!");
       return;
     }
 
@@ -79,11 +87,17 @@ const DashboardPage: NextPageWithLayout = () => {
         </div>
 
         <div className="flex space-x-4 overflow-x-auto pb-2">
-          {CATEGORIES.map((category) => (
+          <CategoryFilterCard
+            name="All"
+            productCount={totalProducts || 0}
+            isSelected={selectedCategory === "all"}
+            onClick={() => handleCategoryClick("all")}
+          />
+          {categories?.map((category) => (
             <CategoryFilterCard
               key={category.id}
               name={category.name}
-              productCount={category.count}
+              productCount={category._count.products}
               isSelected={selectedCategory === category.id}
               onClick={() => handleCategoryClick(category.id)}
             />

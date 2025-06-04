@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { create } from "zustand";
 
 type CartItem = {
@@ -45,7 +46,7 @@ const useCartStore = create<CreateCart>()((set) => ({
         items: duplicateItems,
       };
     });
-    alert("Product added to cart");
+    toast.success("Product added to Cart");
   },
   clearCart: () => {
     set(() => {

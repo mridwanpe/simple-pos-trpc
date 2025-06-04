@@ -14,7 +14,7 @@ export const CategoryFilterCard = ({
   return (
     <button
       onClick={onClick}
-      className={`hover:bg-muted/50 flex min-w-[210px] flex-col items-center justify-center rounded-lg border p-4 text-center transition-colors ${
+      className={`cursor-pointer hover:bg-muted/50 flex min-w-[210px] flex-col items-center justify-center rounded-lg border p-4 text-center transition-colors ${
         isSelected ? "border-primary bg-primary/10" : ""
       }`}
     >
