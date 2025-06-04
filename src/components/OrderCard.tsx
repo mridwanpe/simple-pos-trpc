@@ -1,60 +1,74 @@
 import { Button } from "@/components/ui/button";
+import { toRupiah } from "@/utils/toRupiah";
+import { OrderStatus } from "@prisma/client";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-export interface Order {
+interface OrderCardProps {
   id: string;
   totalAmount: number;
   totalItems: number;
-  status: "Processing" | "Finished";
-}
-
-interface OrderCardProps {
-  order: Order;
+  status: OrderStatus;
   onFinishOrder?: (orderId: string) => void;
 }
 
-export const OrderCard = ({ order, onFinishOrder }: OrderCardProps) => {
-  const handleFinishOrder = () => {
-    if (onFinishOrder) {
-      onFinishOrder(order.id);
+export const OrderCard = ({
+  id,
+  status,
+  totalAmount,
+  totalItems,
+  onFinishOrder,
+}: OrderCardProps) => {
+  const handleFinishOrder = () => {};
+
+  const getBadgeColor = () => {
+    switch (status) {
+      case OrderStatus.AWAITING_PAYMENT:
+        return "bg-yellow-200 text-yellow-800";
+      case OrderStatus.PROCESSING:
+        return "bg-blue-200 text-blue-800";
+      case OrderStatus.DONE:
+        return "bg-green-200 text-green-800";
     }
   };
 
   return (
-    <div className="rounded-lg border p-4 shadow-sm bg-card">
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h4 className="font-medium text-sm text-muted-foreground">Order ID</h4>
-          <p className="font-mono text-sm">{order.id}</p>
-        </div>
-        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-          order.status === "Processing" 
-            ? "bg-yellow-100 text-yellow-800" 
-            : "bg-green-100 text-green-800"
-        }`}>
-          {order.status}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <h4 className="font-medium text-sm text-muted-foreground">Total Amount</h4>
-          <p className="text-lg font-bold">${order.totalAmount.toFixed(2)}</p>
-        </div>
-        <div>
-          <h4 className="font-medium text-sm text-muted-foreground">Total Items</h4>
-          <p className="text-lg font-bold">{order.totalItems}</p>
+    <div className="bg-card rounded-lg border p-4 shadow-sm">
+      <div className="mb-3 flex items-start justify-between">
+        <div className="flex w-full justify-between items-center">
+          <Tooltip>
+            <TooltipTrigger>Order ID</TooltipTrigger>
+            <TooltipContent>
+              <p>{id}</p>
+            </TooltipContent>
+          </Tooltip>
+          <h1
+            className={`rounded-full w-fit h-fit px-3 py-0.5 text-[9px] font-medium ${getBadgeColor()}`}
+          >
+            {status}
+          </h1>
         </div>
       </div>
 
-      {order.status === "Processing" && (
-        <Button 
-          onClick={handleFinishOrder}
-          className="w-full"
-          size="sm"
-        >
+      <div className="mb-4 grid grid-cols-2 gap-4">
+        <div>
+          <h4 className="text-muted-foreground text-sm font-medium">
+            Total Amount
+          </h4>
+          <p className="text-lg font-bold">{toRupiah(totalAmount)}</p>
+        </div>
+        <div>
+          <h4 className="text-muted-foreground text-sm font-medium">
+            Total Items
+          </h4>
+          <p className="text-lg font-bold">{totalItems}</p>
+        </div>
+      </div>
+
+      {status === OrderStatus.PROCESSING && (
+        <Button onClick={handleFinishOrder} className="w-full" size="sm">
           Finish Order
         </Button>
       )}
     </div>
   );
-}; 
+};

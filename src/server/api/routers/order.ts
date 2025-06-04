@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { createQRIS, xenditPaymentMethodClient } from "@/server/xendit";
 import { TRPCError } from "@trpc/server";
+import { OrderStatus, Prisma } from "@prisma/client";
 
 export const OrderRouter = createTRPCRouter({
   createOrder: protectedProcedure
@@ -143,10 +144,51 @@ export const OrderRouter = createTRPCRouter({
         },
       });
 
-      if(!order?.paidAt){
+      if (!order?.paidAt) {
         return false;
       }
 
       return true;
+    }),
+
+  getOrders: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(["ALL", ...Object.keys(OrderStatus)]),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const whereClause: Prisma.OrderWhereInput = {};
+
+      switch(input.status){
+        case OrderStatus.AWAITING_PAYMENT:
+          whereClause.status = OrderStatus.AWAITING_PAYMENT;
+          break;
+        case OrderStatus.PROCESSING:
+          whereClause.status = OrderStatus.PROCESSING;
+          break;
+        case OrderStatus.DONE:
+          whereClause.status = OrderStatus.DONE;
+          break;
+      }
+
+      const orders = await db.order.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          grandTotal: true,
+          status: true,
+          paidAt: true,
+          _count: {
+            select: {
+              orderItems: true,
+            },
+          },
+        },
+      });
+
+      return orders;
     }),
 });
