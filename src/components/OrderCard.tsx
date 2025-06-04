@@ -9,6 +9,7 @@ interface OrderCardProps {
   totalItems: number;
   status: OrderStatus;
   onFinishOrder?: (orderId: string) => void;
+  isFinishingOrder?: boolean;
 }
 
 export const OrderCard = ({
@@ -17,9 +18,8 @@ export const OrderCard = ({
   totalAmount,
   totalItems,
   onFinishOrder,
+  isFinishingOrder,
 }: OrderCardProps) => {
-  const handleFinishOrder = () => {};
-
   const getBadgeColor = () => {
     switch (status) {
       case OrderStatus.AWAITING_PAYMENT:
@@ -34,7 +34,7 @@ export const OrderCard = ({
   return (
     <div className="bg-card rounded-lg border p-4 shadow-sm">
       <div className="mb-3 flex items-start justify-between">
-        <div className="flex w-full justify-between items-center">
+        <div className="flex w-full items-center justify-between">
           <Tooltip>
             <TooltipTrigger>Order ID</TooltipTrigger>
             <TooltipContent>
@@ -42,7 +42,7 @@ export const OrderCard = ({
             </TooltipContent>
           </Tooltip>
           <h1
-            className={`rounded-full w-fit h-fit px-3 py-0.5 text-[9px] font-medium ${getBadgeColor()}`}
+            className={`h-fit w-fit rounded-full px-3 py-0.5 text-[9px] font-medium ${getBadgeColor()}`}
           >
             {status}
           </h1>
@@ -65,8 +65,17 @@ export const OrderCard = ({
       </div>
 
       {status === OrderStatus.PROCESSING && (
-        <Button onClick={handleFinishOrder} className="w-full" size="sm">
-          Finish Order
+        <Button
+          onClick={() => {
+            if (onFinishOrder) {
+              onFinishOrder(id);
+            }
+          }}
+          className="w-full"
+          size="sm"
+          disabled={isFinishingOrder}
+        >
+          {isFinishingOrder ? "Processing..." : "Finish Order"}
         </Button>
       )}
     </div>

@@ -19,13 +19,32 @@ import {
 import { OrderStatus } from "@prisma/client";
 
 const SalesPage: NextPageWithLayout = () => {
+  const apiUtils = api.useUtils();
+
   const [filterOrder, setFilterOrder] = useState<OrderStatus | "ALL">("ALL");
 
   const { data: orders } = api.order.getOrders.useQuery({
     status: filterOrder,
   });
 
-  const handleFinishOrder = () => {};
+  const {
+    mutate: finishOrder,
+    isPending: finishOrderIsPending,
+    variables: finishOrderVariables,
+  } = api.order.finishOrder.useMutation({
+    onSuccess: async () => {
+      await apiUtils.order.getOrders.invalidate({
+        status: filterOrder,
+      });
+      alert("Order finished");
+    },
+  });
+
+  const handleFinishOrder = (orderId: string) => {
+    finishOrder({
+      orderId,
+    });
+  };
 
   const handleFilterOrderChange = (orderStatus: OrderStatus | "ALL") => {
     setFilterOrder(orderStatus);
@@ -86,6 +105,7 @@ const SalesPage: NextPageWithLayout = () => {
               status={order.status}
               totalAmount={order.grandTotal}
               totalItems={order._count.orderItems}
+              isFinishingOrder={finishOrderIsPending && finishOrderVariables?.orderId === order.id}
             />
           ))}
         </div>

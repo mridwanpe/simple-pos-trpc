@@ -162,7 +162,7 @@ export const OrderRouter = createTRPCRouter({
 
       const whereClause: Prisma.OrderWhereInput = {};
 
-      switch(input.status){
+      switch (input.status) {
         case OrderStatus.AWAITING_PAYMENT:
           whereClause.status = OrderStatus.AWAITING_PAYMENT;
           break;
@@ -190,5 +190,56 @@ export const OrderRouter = createTRPCRouter({
       });
 
       return orders;
+    }),
+
+  finishOrder: protectedProcedure
+    .input(
+      z.object({
+        orderId: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const order = await db.order.findUnique({
+        where: {
+          id: input.orderId,
+        },
+        select: {
+          id: true,
+          status: true,
+          paidAt: true,
+        },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not found",
+        });
+      }
+
+      if (!order.paidAt) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Order is not paid yet",
+        });
+      }
+
+      if (order.status !== OrderStatus.PROCESSING) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Order is not processing",
+        });
+      }
+
+      await db.order.update({
+        where: {
+          id: order.id,
+        },
+        data: {
+          status: OrderStatus.DONE,
+        },
+      });
     }),
 });
