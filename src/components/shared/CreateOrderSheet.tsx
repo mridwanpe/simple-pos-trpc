@@ -82,7 +82,6 @@ export const CreateOrderSheet = ({
 }: CreateOrderSheetProps) => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentInfoLoading, setPaymentInfoLoading] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   const cartStore = useCartStore();
 
@@ -93,7 +92,7 @@ export const CreateOrderSheet = ({
   const tax = useMemo(() => subtotal * 0.1, [subtotal]);
   const grandTotal = useMemo(() => subtotal + tax, [subtotal, tax]);
 
-  const { mutate: createOrder, data: createOrderResponse } =
+  const { mutate: createOrder, data: createdOrder } =
     api.order.createOrder.useMutation({
       onSuccess: () => {
         alert("Order created successfully");
@@ -101,6 +100,25 @@ export const CreateOrderSheet = ({
         setPaymentDialogOpen(true);
       },
     });
+
+  const { mutate: simulatePayment } = api.order.simulatePayment.useMutation({
+    onSuccess: () => {
+      alert("Payment Success");
+    },
+  });
+
+  const {
+    mutate: checkOrderPaymentStatus,
+    data: orderPaid,
+    isPending: checkOrderPaymentStatusIsPending,
+    reset: resetCheckOrderPaymentStatus,
+  } = api.order.checkOrderPaymentStatus.useMutation({
+    onSuccess: (orderPaid) => {
+      if (orderPaid) {
+        cartStore.clearCart();
+      }
+    },
+  });
 
   const handleCreateOrder = () => {
     createOrder({
@@ -111,16 +129,27 @@ export const CreateOrderSheet = ({
         };
       }),
     });
-    // setPaymentDialogOpen(true);
-    // setPaymentInfoLoading(true);
-
-    // setTimeout(() => {
-    //   setPaymentInfoLoading(false);
-    // }, 3000);
   };
 
   const handleRefresh = () => {
-    setPaymentSuccess(true);
+    if (!createdOrder) return;
+    checkOrderPaymentStatus({
+      orderId: createdOrder?.order?.id,
+    });
+  };
+
+  const handleSimulatePayment = () => {
+    if (!createdOrder) return;
+
+    simulatePayment({
+      orderId: createdOrder?.order?.id,
+    });
+  };
+
+  const handleClosePaymentDialog = () => {
+    setPaymentDialogOpen(false);
+    onOpenChange(false); 
+    resetCheckOrderPaymentStatus();
   };
 
   return (
@@ -191,39 +220,50 @@ export const CreateOrderSheet = ({
               </div>
             ) : (
               <>
-                <Button variant="link" onClick={handleRefresh}>
-                  Refresh
-                </Button>
+                {!orderPaid && (
+                  <Button
+                    variant="link"
+                    onClick={handleRefresh}
+                    disabled={checkOrderPaymentStatusIsPending}
+                  >
+                    {checkOrderPaymentStatusIsPending
+                      ? "Checking..."
+                      : "Refresh"}
+                  </Button>
+                )}
 
-                {!paymentSuccess ? (
-                  <PaymentQRCode
-                    qrString={createOrderResponse?.qrString ?? ""}
-                  />
+                {!orderPaid ? (
+                  <PaymentQRCode qrString={createdOrder?.qrString ?? ""} />
                 ) : (
                   <CheckCircle2 className="size-80 text-green-500" />
                 )}
 
                 <p className="text-3xl font-medium">
-                  {toRupiah(createOrderResponse?.order.grandTotal ?? 0)}
+                  {toRupiah(createdOrder?.order.grandTotal ?? 0)}
                 </p>
 
                 <p className="text-muted-foreground text-sm">
-                  Transaction ID: {createOrderResponse?.order.id}
+                  Transaction ID: {createdOrder?.order.id}
                 </p>
+
+                {!orderPaid && (
+                  <Button onClick={handleSimulatePayment} variant="link">
+                    Simulate Payment
+                  </Button>
+                )}
               </>
             )}
           </div>
 
           <AlertDialogFooter>
-            <AlertDialogCancel asChild>
-              <Button
-                disabled={paymentInfoLoading}
-                variant="outline"
-                className="w-full"
-              >
-                Done
-              </Button>
-            </AlertDialogCancel>
+            <Button
+              disabled={paymentInfoLoading}
+              variant="outline"
+              className="w-full"
+              onClick={handleClosePaymentDialog}
+            >
+              Done
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

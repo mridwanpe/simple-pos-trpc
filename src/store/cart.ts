@@ -13,6 +13,7 @@ type AddToCartItem = Omit<CartItem, "quantity">;
 interface CreateCart {
   items: CartItem[];
   addToCart: (newItem: AddToCartItem) => void;
+  clearCart: () => void;
 }
 
 const useCartStore = create<CreateCart>()((set) => ({
@@ -45,6 +46,14 @@ const useCartStore = create<CreateCart>()((set) => ({
       };
     });
     alert("Product added to cart");
+  },
+  clearCart: () => {
+    set(() => {
+      return {
+        ...useCartStore,
+        items: [],
+      };
+    })
   },
 }));
 

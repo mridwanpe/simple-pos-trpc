@@ -14,6 +14,15 @@ type XenditWebhookBody = {
 
 const handler: NextApiHandler = async (req, res) => {
   if (req.method !== "POST") return;
+  
+  // Verify webhook berasal dari Xendit
+  const headers = req.headers;
+
+  const webhookToken = headers["x-callback-token"];
+
+  if (webhookToken !== process.env.XENDIT_WEBHOOK_TOKEN) {
+    return res.status(401);
+  }
 
   const body = req.body as XenditWebhookBody;
 
@@ -24,11 +33,11 @@ const handler: NextApiHandler = async (req, res) => {
   });
 
   if (!order) {
-    res.status(404).send("Order not found");
+    return res.status(404).send("Order not found");
   }
 
-  if (body.data.status === "SUCCEEDED") {
-    return res.status(422);
+  if (body.data.status !== "SUCCEEDED") {
+    return res.status(200);
   }
 
   await db.order.update({
